@@ -50,6 +50,8 @@ RUN yaourt -G mingw-w64-openssl && cd mingw-w64-openssl && \
     makepkg -sirc --noconfirm
 
 RUN sudo ln -s /usr/i686-w64-mingw32/bin/ssleay32.dll /usr/i686-w64-mingw32/bin/libssl32.dll
+ENV OPENSSL_LIB_DIR "/usr/i686-w64-mingw32/bin"
+ENV OPENSSL_INCLUDE_DIR "/usr/i686-w64-mingw32/include"
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
 
