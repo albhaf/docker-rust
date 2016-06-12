@@ -47,17 +47,19 @@ RUN yaourt -G mingw-w64-zlib && cd mingw-w64-zlib && \
 
 RUN yaourt -G mingw-w64-openssl && cd mingw-w64-openssl && \
     sed -i 's/ x86_64-w64-mingw32//g' PKGBUILD && \
+    sed -i 's/shared/no-shared/g' PKGBUILD && \
     makepkg -sirc --noconfirm
 
-RUN sudo ln -s /usr/i686-w64-mingw32/bin/ssleay32.dll /usr/i686-w64-mingw32/bin/libssl32.dll
-ENV OPENSSL_LIB_DIR "/usr/i686-w64-mingw32/bin"
-ENV OPENSSL_INCLUDE_DIR "/usr/i686-w64-mingw32/include"
-
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
-
 RUN ~/.cargo/bin/rustup target add i686-pc-windows-gnu
-
 ADD config /home/build/.cargo/config
+
+RUN sudo ln -s /usr/i686-w64-mingw32/lib/libssl.a /usr/i686-w64-mingw32/lib/libssl32.a
+RUN sudo ln -s /usr/i686-w64-mingw32/lib/libcrypto.a /usr/i686-w64-mingw32/lib/libeay32.a
+ENV OPENSSL_LIB_DIR "/usr/i686-w64-mingw32/lib"
+ENV OPENSSL_INCLUDE_DIR "/usr/i686-w64-mingw32/include"
+ENV OPENSSL_STATIC 1
+ENV OPENSSL_LIBS "ssl32:eay32:gdi32"
 
 #TODO: yaourt clean?
 RUN sudo pacman -Scc --noprogressbar --noconfirm
