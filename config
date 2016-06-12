@@ -1,0 +1,3 @@
+[target.i686-pc-windows-gnu]
+linker = "/usr/bin/i686-w64-mingw32-gcc"
+ar = "/usr/bin/i686-w64-mingw32/bin/ar"
