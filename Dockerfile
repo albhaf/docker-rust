@@ -3,6 +3,10 @@ FROM base/archlinux
 RUN curl -o /etc/pacman.d/mirrorlist "https://www.archlinux.org/mirrorlist/?country=all&protocol=https&ip_version=6&use_mirror_status=on" && \
   sed -i 's/^#//' /etc/pacman.d/mirrorlist
 
+RUN echo "[archlinuxfr]" >> /etc/pacman.conf && \
+    echo "SigLevel = Never" >> /etc/pacman.conf && \
+    echo "Server = http://repo.archlinux.fr/x86_64" >> /etc/pacman.conf 
+
 RUN pacman -Sy archlinux-keyring --noprogressbar --noconfirm && \
     pacman-key --populate && \
     pacman-key --refresh-keys && \
@@ -12,23 +16,17 @@ RUN pacman -Sy archlinux-keyring --noprogressbar --noconfirm && \
     pacman-db-upgrade && \
     pacman -Syyu --noprogressbar --noconfirm
 
-RUN pacman --sync --noconfirm --noprogressbar --quiet sudo base-devel
-RUN useradd --create-home --comment "Arch Build User" build
-RUN mkdir /tmp/mingw-w64-gcc && chown build /tmp/mingw-w64-gcc
+RUN pacman --sync --noconfirm --noprogressbar --quiet sudo base-devel yaourt
 
-RUN echo "[archlinuxfr]" >> /etc/pacman.conf && \
-    echo "SigLevel = Never" >> /etc/pacman.conf && \
-    echo "Server = http://repo.archlinux.fr/x86_64" >> /etc/pacman.conf && \
-    pacman -Syyu --noconfirm && \
-    pacman -S --noconfirm yaourt
-
-RUN groupadd sudo && \
+RUN useradd --create-home --comment "Arch Build User" build && \
+    groupadd sudo && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers; \
     echo 'Defaults:nobody !requiretty' >> /etc/sudoers; \
     gpasswd -a build sudo
 
 USER build
 WORKDIR /tmp
+
 RUN yaourt -G mingw-w64-gcc && cd mingw-w64-gcc && \
     sed -i 's/ x86_64-w64-mingw32//g' PKGBUILD && \
     sed -i 's/--disable-dw2-exceptions/--disable-sjlj-exceptions --with-dwarf2/g' PKGBUILD && \
@@ -40,8 +38,8 @@ RUN yaourt -G mingw-w64-gcc && cd mingw-w64-gcc && \
     sed -i 's/,f951//g' PKGBUILD && \
     makepkg -sirc --noconfirm
 
-RUN gpg --recv-key D9C4D26D0E604491
-RUN yaourt -G mingw-w64-zlib && cd mingw-w64-zlib && \
+RUN gpg --recv-key D9C4D26D0E604491 && \
+    yaourt -G mingw-w64-zlib && cd mingw-w64-zlib && \
     sed -i 's/ x86_64-w64-mingw32//g' PKGBUILD && \
     makepkg -sirc --noconfirm
 
@@ -50,16 +48,14 @@ RUN yaourt -G mingw-w64-openssl && cd mingw-w64-openssl && \
     sed -i 's/shared/no-shared/g' PKGBUILD && \
     makepkg -sirc --noconfirm
 
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
-RUN ~/.cargo/bin/rustup target add i686-pc-windows-gnu
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable && \
+    ~/.cargo/bin/rustup target add i686-pc-windows-gnu
 ADD config /home/build/.cargo/config
 
-RUN sudo ln -s /usr/i686-w64-mingw32/lib/libssl.a /usr/i686-w64-mingw32/lib/libssl32.a
-RUN sudo ln -s /usr/i686-w64-mingw32/lib/libcrypto.a /usr/i686-w64-mingw32/lib/libeay32.a
 ENV OPENSSL_LIB_DIR "/usr/i686-w64-mingw32/lib"
 ENV OPENSSL_INCLUDE_DIR "/usr/i686-w64-mingw32/include"
 ENV OPENSSL_STATIC 1
-ENV OPENSSL_LIBS "ssl32:eay32:gdi32"
+ENV OPENSSL_LIBS "ssl:crypto:gdi32"
 
-#TODO: yaourt clean?
-RUN sudo pacman -Scc --noprogressbar --noconfirm
+RUN sudo pacman -Scc --noprogressbar --noconfirm && \
+    sudo yaourt -Scc --noconfirm
