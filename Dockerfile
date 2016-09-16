@@ -1,20 +1,10 @@
-FROM base/archlinux
-
-RUN curl -o /etc/pacman.d/mirrorlist "https://www.archlinux.org/mirrorlist/?country=all&protocol=https&ip_version=6&use_mirror_status=on" && \
-  sed -i 's/^#//' /etc/pacman.d/mirrorlist
+FROM binhex/arch-base:latest
+MAINTAINER Albert Hafvenström <albhaf@gmail.com>
 
 RUN echo "[archlinuxfr]" >> /etc/pacman.conf && \
     echo "SigLevel = Never" >> /etc/pacman.conf && \
-    echo "Server = http://repo.archlinux.fr/x86_64" >> /etc/pacman.conf 
-
-RUN pacman -Sy archlinux-keyring --noprogressbar --noconfirm && \
-    pacman-key --populate && \
-    pacman-key --refresh-keys && \
-    pacman -Sy --noprogressbar --noconfirm && \
-    pacman -S --force openssl --noconfirm && \
-    pacman -S pacman --noprogressbar --noconfirm && \
-    pacman-db-upgrade && \
-    pacman -Syyu --noprogressbar --noconfirm
+    echo "Server = http://repo.archlinux.fr/x86_64" >> /etc/pacman.conf &&\
+    pacman -Sy
 
 RUN pacman --sync --noconfirm --noprogressbar --quiet sudo base-devel yaourt
 
@@ -27,6 +17,9 @@ RUN useradd --create-home --comment "Arch Build User" build && \
 USER build
 WORKDIR /tmp
 
+# Overrides from arch-base
+ENV HOME /home/build
+
 RUN yaourt -G mingw-w64-gcc && cd mingw-w64-gcc && \
     sed -i 's/ x86_64-w64-mingw32//g' PKGBUILD && \
     sed -i 's/--disable-dw2-exceptions/--disable-sjlj-exceptions --with-dwarf2/g' PKGBUILD && \
@@ -36,26 +29,27 @@ RUN yaourt -G mingw-w64-gcc && cd mingw-w64-gcc && \
     sed -i 's/,gnat1//g' PKGBUILD && \
     sed -i 's/,fortran//g' PKGBUILD && \
     sed -i 's/,f951//g' PKGBUILD && \
-    makepkg -sirc --noconfirm
+    makepkg -sirc --noconfirm && \
+    cd .. && rm -rf mingw-w64-gcc
 
 RUN gpg --recv-key D9C4D26D0E604491 && \
     yaourt -G mingw-w64-zlib && cd mingw-w64-zlib && \
     sed -i 's/ x86_64-w64-mingw32//g' PKGBUILD && \
-    makepkg -sirc --noconfirm
+    makepkg -sirc --noconfirm && \
+    cd .. && rm -rf mingw-w64-zlib
 
 RUN yaourt -G mingw-w64-openssl && cd mingw-w64-openssl && \
     sed -i 's/ x86_64-w64-mingw32//g' PKGBUILD && \
     sed -i 's/shared/no-shared/g' PKGBUILD && \
-    makepkg -sirc --noconfirm
+    makepkg -sirc --noconfirm && \
+    cd .. && rm -rf mingw-w64-openssl
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable && \
     ~/.cargo/bin/rustup target add i686-pc-windows-gnu
-ADD config /home/build/.cargo/config
+ADD config $HOME/.cargo/config
 
 ENV OPENSSL_LIB_DIR "/usr/i686-w64-mingw32/lib"
 ENV OPENSSL_INCLUDE_DIR "/usr/i686-w64-mingw32/include"
 ENV OPENSSL_STATIC 1
 ENV OPENSSL_LIBS "ssl:crypto:gdi32"
 
-RUN sudo pacman -Scc --noprogressbar --noconfirm && \
-    sudo yaourt -Scc --noconfirm
