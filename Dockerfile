@@ -46,10 +46,11 @@ RUN yaourt -G mingw-w64-openssl && cd mingw-w64-openssl && \
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable && \
     ~/.cargo/bin/rustup target add i686-pc-windows-gnu
-ADD config $HOME/.cargo/config
 
 ENV OPENSSL_LIB_DIR "/usr/i686-w64-mingw32/lib"
 ENV OPENSSL_INCLUDE_DIR "/usr/i686-w64-mingw32/include"
 ENV OPENSSL_STATIC 1
 ENV OPENSSL_LIBS "ssl:crypto:gdi32"
 
+ENV CARGO_TARGET_I686_PC_WINDOWS_GNU_LINKER "/usr/bin/i686-w64-mingw32-gcc"
+ENV CARGO_TARGET_I686_PC_WINDOWS_GNU_AR "/usr/bin/i686-w64-mingw32/bin/ar"
