@@ -6,7 +6,8 @@ RUN echo "[archlinuxfr]" >> /etc/pacman.conf && \
     echo "Server = http://repo.archlinux.fr/x86_64" >> /etc/pacman.conf &&\
     pacman -Sy
 
-RUN pacman --sync --noconfirm --noprogressbar --quiet sudo base-devel yaourt
+RUN pacman --sync --noconfirm --noprogressbar --quiet sudo base-devel yaourt \
+    arm-linux-gnueabihf-gcc
 
 RUN useradd --create-home --comment "Arch Build User" build && \
     groupadd sudo && \
@@ -54,3 +55,5 @@ ENV OPENSSL_LIBS "ssl:crypto:gdi32"
 
 ENV CARGO_TARGET_I686_PC_WINDOWS_GNU_LINKER "/usr/bin/i686-w64-mingw32-gcc"
 ENV CARGO_TARGET_I686_PC_WINDOWS_GNU_AR "/usr/bin/i686-w64-mingw32/bin/ar"
+
+ENV CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF "/usr/bin/arm-linux-gnueabihf-ld"
