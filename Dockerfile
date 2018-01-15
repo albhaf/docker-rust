@@ -6,8 +6,7 @@ RUN echo "[archlinuxfr]" >> /etc/pacman.conf && \
     echo "Server = http://repo.archlinux.fr/x86_64" >> /etc/pacman.conf &&\
     pacman -Sy
 
-RUN pacman --sync --noconfirm --noprogressbar --quiet sudo base-devel yaourt \
-    arm-linux-gnueabihf-gcc
+RUN pacman --sync --noconfirm --noprogressbar --quiet sudo base-devel yaourt
 
 RUN useradd --create-home --comment "Arch Build User" build && \
     groupadd sudo && \
@@ -44,6 +43,10 @@ RUN yaourt -G mingw-w64-openssl && cd mingw-w64-openssl && \
     sed -i 's/shared/no-shared/g' PKGBUILD && \
     makepkg -sirc --noconfirm && \
     cd .. && rm -rf mingw-w64-openssl
+
+RUN yaourt -G arm-linux-gnueabihf-gcc && cd arm-linux-gnueabihf-gcc && \
+    makepkg -sirc --noconfirm && \
+    cd .. && rm -rf arm-linux-gnueabihf-gcc
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable && \
     ~/.cargo/bin/rustup target add i686-pc-windows-gnu
